@@ -29,3 +29,7 @@ Training Methods:
 - Training: 41548, Validation: 10387, Test: 12984
 
 Model Performance:
+- MAE: 0.1328
+- MSE: 0.0787
+- RMSE: 0.2805
+- R^2 Score: 0.8286
