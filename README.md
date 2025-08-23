@@ -27,6 +27,7 @@ Model: BERT (fine-tuned on Levi’s reviews)
 - Bidirectional encoder/decoder setup allows for nuanced natural language processing while being pretrained on a massive collection of text
 
 ![Attention Function](attention.png)
+
 Review Preprocessing:
 - Translate non-english reviews, normalize emojis and symbols (e.g. heart = good, thumb down = bad)
 - Tokenize data to feed into BERT
@@ -37,6 +38,7 @@ Training Methods:
 - Training: 41548, Validation: 10387, Test: 12984
 
 ![Deep Learning Training Architecture](dl_training.png)
+
 Performance: MAE = 0.1328, MSE: 0.0787, RMSE = 0.2805, R² = 0.8286
 
 ![True vs Predicted Labels (Histogram)](bert_eval2.png)
@@ -48,6 +50,7 @@ Model: LSTM (Long-Short Term Memory)
 - Naturally sequential and efficient, making it great for iterative tasks like modeling with time-series data
 
 ![LSTM Gate Architecture](LSTM.png)
+
 Trend Data:
 - Train LSTM on 5 year Google Trends data
 - Augment deep learning training with sentiment data and observe difference
