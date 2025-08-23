@@ -24,7 +24,7 @@ Feature Engineering:
 ## Sentiment Analysis
 Model: BERT (fine-tuned on Levi’s reviews)
 
-![Attention Function](attention)
+![Attention Function](attention.png)
 
 - Transformer-based model (attention mechanism)
 - Bidirectional encoder/decoder setup allows for nuanced natural language processing while being pretrained on a massive collection of text
@@ -33,7 +33,7 @@ Review Preprocessing:
 - Tokenize data to feed into BERT
 Training Methods:
 
-![Deep Learning Training Architecture](dl_training)
+![Deep Learning Training Architecture](dl_training.png)
 
 - Compute loss with MSELoss to see how model is doing vs labeled dataset
 - Adjust neural layer node weights with AdamW optimizer (stochastic gradient descent where weight decay is decoupled from gradient update)
@@ -41,13 +41,13 @@ Training Methods:
 - Training: 41548, Validation: 10387, Test: 12984
 Performance: MAE = 0.1328, MSE: 0.0787, RMSE = 0.2805, R² = 0.8286
 
-![True vs Predicted Labels (Histogram)](bert_eval2)
-![True vs Predicted Labels (Box Plot)](bert_eval)
+![True vs Predicted Labels (Histogram)](bert_eval2.png)
+![True vs Predicted Labels (Box Plot)](bert_eval.png)
 
 ## Time-Series Predictive Model
 Model: LSTM (Long-Short Term Memory)
 
-![LSTM Gate Architecture](LSTM)
+![LSTM Gate Architecture](LSTM.png)
 - Recurrent neural network structure with architecture that allows for long term and non-linear dependencies
 - Naturally sequential and efficient, making it great for iterative tasks like modeling with time-series data
 Trend Data:
@@ -55,12 +55,12 @@ Trend Data:
 - Augment deep learning training with sentiment data and observe difference
 Training Methods:
 
-![Generalized Neural Network Training Architecture](neural_network)
+![Generalized Neural Network Training Architecture](neural_network.png)
 - Aggregated sentiment scores and merged with search trend data
 - Use lookback data as input to predict future
 - MSELoss (cost function), Adam (stochastic gradient-based optimization), layer dropout (to deal with overfitting)
   
-![LSTM Test Split Prediction](lstm_prediction)
+![LSTM Test Split Prediction](lstm_prediction.png)
 
 ## Key Results
 Sentiment consistently improved prediction accuracy across models. Sentiment signals could act as a substitute for missing seasonality/memory in deep learning time-series models while preserving the foresight and stability of the original models.
