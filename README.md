@@ -25,6 +25,7 @@ Feature Engineering:
 Model: BERT (fine-tuned on Levi’s reviews)
 - Transformer-based model (attention mechanism)
 - Bidirectional encoder/decoder setup allows for nuanced natural language processing while being pretrained on a massive collection of text
+
 ![Attention Function](attention.png)
 Review Preprocessing:
 - Translate non-english reviews, normalize emojis and symbols (e.g. heart = good, thumb down = bad)
@@ -34,8 +35,10 @@ Training Methods:
 - Adjust neural layer node weights with AdamW optimizer (stochastic gradient descent where weight decay is decoupled from gradient update)
 - Decay learning rate for fine tuning with LinearLR
 - Training: 41548, Validation: 10387, Test: 12984
+
 ![Deep Learning Training Architecture](dl_training.png)
 Performance: MAE = 0.1328, MSE: 0.0787, RMSE = 0.2805, R² = 0.8286
+
 ![True vs Predicted Labels (Histogram)](bert_eval2.png)
 ![True vs Predicted Labels (Box Plot)](bert_eval.png)
 
@@ -43,6 +46,7 @@ Performance: MAE = 0.1328, MSE: 0.0787, RMSE = 0.2805, R² = 0.8286
 Model: LSTM (Long-Short Term Memory)
 - Recurrent neural network structure with architecture that allows for long term and non-linear dependencies
 - Naturally sequential and efficient, making it great for iterative tasks like modeling with time-series data
+
 ![LSTM Gate Architecture](LSTM.png)
 Trend Data:
 - Train LSTM on 5 year Google Trends data
