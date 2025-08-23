@@ -1,4 +1,4 @@
-# Sentiment-Analysis-Time-Series-Sales-Forecasting
+# Sentiment-Augmented-Trend-Forecasting
 This project explores how consumer sentiment can be integrated into predictive models for Levi’s sales and product demand trends. By combining e-commerce reviews and Google Trends, this aims to forecast sales fluctuations and promotions more accurately.
 
 This approach demonstrates that incorporating sentiment analysis consistently improves forecasting performance across time series modeling techniques, in this case augmenting an LSTM regression model with sentiment scores from BERT.
