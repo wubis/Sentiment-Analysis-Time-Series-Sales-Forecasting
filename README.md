@@ -11,10 +11,12 @@ Google Trends – search interest for Levi’s product keywords
 Scraping Tools: BeautifulSoup, Selenium, Firefox WebDriver
 Volume: ~60,000 reviews collected in ~13 hours
 Cross-platform matching: Splink fuzzy matching (Levenshtein + Jaro-Winkler)
+
 Text Processing:
 - Google Translate API for non-English reviews
 - Emoji-to-sentiment normalization
 - Sentiment scoring via BERT fine-tuning
+
 Feature Engineering:
 - Sentiment metrics (rolling averages & volatility)
 - Product attributes (fit, style, material, etc.)
@@ -25,9 +27,11 @@ Feature Engineering:
 Model: BERT (fine-tuned on Levi’s reviews)
 - Transformer-based model (attention mechanism)
 - Bidirectional encoder/decoder setup allows for nuanced natural language processing while being pretrained on a massive collection of text
+  
 Review Preprocessing:
 - Translate non-english reviews, normalize emojis and symbols (e.g. heart = good, thumb down = bad)
 - Tokenize data to feed into BERT
+  
 Training Methods:
 - Compute loss with MSELoss to see how model is doing vs labeled dataset
 - Adjust neural layer node weights with AdamW optimizer (stochastic gradient descent where weight decay is decoupled from gradient update)
@@ -51,6 +55,7 @@ Model: LSTM (Long-Short Term Memory)
 Trend Data:
 - Train LSTM on 5 year Google Trends data
 - Augment deep learning training with sentiment data and observe difference
+  
 Training Methods:
 - Aggregated sentiment scores and merged with search trend data
 - Use lookback data as input to predict future
