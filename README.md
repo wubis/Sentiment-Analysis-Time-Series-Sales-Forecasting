@@ -25,9 +25,6 @@ Feature Engineering:
 Model: BERT (fine-tuned on Levi’s reviews)
 - Transformer-based model (attention mechanism)
 - Bidirectional encoder/decoder setup allows for nuanced natural language processing while being pretrained on a massive collection of text
-
-![Attention Function](attention.png)
-
 Review Preprocessing:
 - Translate non-english reviews, normalize emojis and symbols (e.g. heart = good, thumb down = bad)
 - Tokenize data to feed into BERT
