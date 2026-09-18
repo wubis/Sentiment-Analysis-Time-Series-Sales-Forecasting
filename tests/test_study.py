@@ -124,3 +124,33 @@ def test_missing_real_data_fails_clearly(tmp_path):
     assert process.returncode == 2
     assert "Required input missing" in process.stderr
     assert not (tmp_path / "run").exists()
+
+
+def test_saturday_calendar_uses_monday_issue_and_weekly_labels(dataset, tmp_path):
+    from sentiment_forecast.data import trends_table, coverage_table
+
+    config, trends, reviews, coverage = dataset
+    config = small_config(config, trends)
+    for key in ["development_start", "development_end", "test_start", "test_end"]:
+        config[key] = str((pd.Timestamp(config[key]) - pd.Timedelta(days=1)).date())
+    config["week_end_day"] = "SAT"
+    config["issue_offset_days"] = 2
+    config["target_metadata"]["period_convention"] = "Saturday-ending UTC"
+    saturday_trends = trends.reset_index().copy()
+    saturday_trends["date"] -= pd.Timedelta(days=1)
+    saturday_trends = trends_table(saturday_trends, "SAT")
+    saturday_coverage = coverage.reset_index().copy()
+    saturday_coverage["date"] -= pd.Timedelta(days=1)
+    saturday_coverage = coverage_table(saturday_coverage, "SAT")
+    ledger = run_study(
+        config, saturday_trends, reviews, saturday_coverage, tmp_path / "sat-run"
+    )
+    assert len(ledger) > 0
+    assert ledger.origin.dt.dayofweek.eq(5).all()
+    assert (ledger.issued_at - ledger.origin).dt.days.eq(2).all()
+    assert ((ledger.target_date - ledger.origin).dt.days == ledger.horizon * 7).all()
+    fits = pd.read_csv(tmp_path / "sat-run/fits.csv")
+    assert (
+        pd.to_datetime(fits.label_available_max, utc=True)
+        <= pd.to_datetime(fits.origin, utc=True) + pd.Timedelta(days=2)
+    ).all()

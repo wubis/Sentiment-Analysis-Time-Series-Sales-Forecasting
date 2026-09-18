@@ -5,3 +5,5 @@ __pycache__/
 artifacts/
 data/
 .ipynb_checkpoints/
+.DS_Store
+.ruff_cache/

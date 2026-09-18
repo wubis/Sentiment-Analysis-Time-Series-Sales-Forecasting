@@ -58,8 +58,19 @@ def validate_config(config, trends):
     ]:
         if not metadata.get(key):
             raise ValueError(f"target_metadata requires {key}")
-    if metadata["period_convention"] != "Sunday-ending UTC":
-        raise ValueError("Explicit conversion to Sunday-ending UTC is required")
+    conventions = {"Sunday-ending UTC": ("SUN", 1), "Saturday-ending UTC": ("SAT", 2)}
+    if metadata["period_convention"] not in conventions:
+        raise ValueError(
+            "Period convention must be Sunday-ending UTC or Saturday-ending UTC"
+        )
+    expected_day, expected_issue_offset = conventions[metadata["period_convention"]]
+    if (
+        config.get("week_end_day", "SUN") != expected_day
+        or config.get("issue_offset_days", 1) != expected_issue_offset
+    ):
+        raise ValueError(
+            "week_end_day and issue_offset_days must match the period convention"
+        )
     if any(str(value).startswith("REPLACE") for value in metadata.values()):
         raise ValueError("Replace example target metadata with audited source metadata")
     if config["study_mode"] != "synthetic" and pd.isna(
@@ -105,6 +116,7 @@ def validate_config(config, trends):
 def run_study(config, trends, reviews, coverage, output_dir, input_hashes=None):
     dates = validate_config(config, trends)
     dev_start, dev_end, test_start, test_end = dates
+    issue_offset_days = config.get("issue_offset_days", 1)
     if reviews.scorer_cutoff.max() >= dev_start:
         raise ValueError(
             "Frozen scorer must be selected before forecasting development begins"
@@ -125,7 +137,7 @@ def run_study(config, trends, reviews, coverage, output_dir, input_hashes=None):
     selected = {}
     try:
         for h in config["horizons"]:
-            features = feature_matrix(trends, reviews, coverage, h)
+            features = feature_matrix(trends, reviews, coverage, h, issue_offset_days)
             features = features.loc[features.index >= feature_start]
             candidates = {}
             dev_origins = trends.loc[dev_start:dev_end].index
@@ -143,12 +155,19 @@ def run_study(config, trends, reviews, coverage, output_dir, input_hashes=None):
                             actual_row.available_at
                         ):
                             continue
-                        if actual_row.available_at > issue_time(test_start):
+                        if actual_row.available_at > issue_time(
+                            test_start, issue_offset_days
+                        ):
                             raise ValueError(
                                 "A development selection label is unavailable at first test issuance"
                             )
                         indices, y = eligible_training_origins(
-                            trends, features, origin, h, config["min_history_weeks"]
+                            trends,
+                            features,
+                            origin,
+                            h,
+                            config["min_history_weeks"],
+                            issue_offset_days,
                         )
                         if len(indices) < config["min_train_examples"]:
                             continue
@@ -159,7 +178,7 @@ def run_study(config, trends, reviews, coverage, output_dir, input_hashes=None):
                                 phase="development",
                                 model=f"ridge_{variant}",
                                 origin=origin,
-                                issued_at=issue_time(origin),
+                                issued_at=issue_time(origin, issue_offset_days),
                                 horizon=h,
                                 target_date=target_date,
                                 prediction=pred,
@@ -197,7 +216,12 @@ def run_study(config, trends, reviews, coverage, output_dir, input_hashes=None):
                 if origin not in features.index:
                     raise ValueError("Insufficient post-scorer history at test origin")
                 indices, y = eligible_training_origins(
-                    trends, features, origin, h, config["min_history_weeks"]
+                    trends,
+                    features,
+                    origin,
+                    h,
+                    config["min_history_weeks"],
+                    issue_offset_days,
                 )
                 if len(indices) < config["min_train_examples"]:
                     raise ValueError(
@@ -212,7 +236,7 @@ def run_study(config, trends, reviews, coverage, output_dir, input_hashes=None):
                 common = dict(
                     phase="test",
                     origin=origin,
-                    issued_at=issue_time(origin),
+                    issued_at=issue_time(origin, issue_offset_days),
                     horizon=h,
                     target_date=target_date,
                     actual=actual,
@@ -247,7 +271,7 @@ def run_study(config, trends, reviews, coverage, output_dir, input_hashes=None):
                         )
                     )
                 for name, pred in baseline_predictions(
-                    trends, origin, h, issue_time(origin)
+                    trends, origin, h, issue_time(origin, issue_offset_days)
                 ).items():
                     rows.append(
                         dict(**common, model=name, prediction=pred, alpha=np.nan)
@@ -312,9 +336,10 @@ def run_study(config, trends, reviews, coverage, output_dir, input_hashes=None):
 
 def run_from_paths(config_path, trends_path, reviews_path, coverage_path, output):
     config = json.loads(Path(config_path).read_text())
-    trends = trends_table(read_csv(trends_path))
+    week_end_day = config.get("week_end_day", "SUN")
+    trends = trends_table(read_csv(trends_path), week_end_day)
     reviews = reviews_table(read_csv(reviews_path), config["product_id"])
-    coverage = coverage_table(read_csv(coverage_path))
+    coverage = coverage_table(read_csv(coverage_path), week_end_day)
     paths = [config_path, trends_path, reviews_path, coverage_path]
     return run_study(
         config, trends, reviews, coverage, output, {str(p): sha256(p) for p in paths}

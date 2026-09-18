@@ -1,10 +1,10 @@
 # Canonical input contract
 
-The original data files and upstream processing are missing. The new pipeline deliberately fails on absent inputs and does not infer dates, product mappings, collection completeness, label scales, or Google Trends period semantics from the legacy notebook.
+Some historical files have been added and classified in [the data inventory](data-inventory.md). Their upstream processing and exact review/collection timestamps are still missing. The new pipeline deliberately fails on absent inputs and does not infer dates, product mappings, collection completeness, label scales, or Google Trends period semantics from the legacy notebook.
 
 ## Target: `trends.csv`
 
-One product/query/geographic target per study:
+One product/query/geographic target per study. A Sunday-ending Monday–Sunday example:
 
 ```csv
 date,available_at,value
@@ -12,13 +12,13 @@ date,available_at,value
 2020-01-12,2020-01-13T00:00:00Z,51
 ```
 
-- `date`: Sunday 00:00 UTC **label** for the Monday-through-Sunday week. The issue time is the following Monday 00:00 UTC, after the period has closed. Convert the source export's actual week convention first; do not relabel week-start data as week-end data without moving the interval.
+- `date`: 00:00 UTC label on the week’s final calendar day. Use Sunday for Monday–Sunday weeks (`week_end_day: SUN`, `issue_offset_days: 1`) or Saturday for Sunday–Saturday weeks (`week_end_day: SAT`, `issue_offset_days: 2`). The issue time in both cases is the following Monday 00:00 UTC. The label marks the named day, not an observed publication timestamp. Preserve the underlying interval when converting a source export.
 - `available_at`: earliest usable publication/receipt timestamp for that observation, in UTC. Never earlier than the end of its weekly period. Labels with delayed reporting cannot enter training until this timestamp. Input target lags obey the same rule.
 - `value`: numeric search-interest index in [0,100], or blank for genuinely missing. A source zero remains zero; blank is not zero. Resolve textual suppression markers upstream and document that treatment.
 - Duplicate dates are rejected. Absent weeks are reindexed with missing values. Neither targets nor evaluation truth are filled.
 - Log exact query/topic, geography, category, search type, retrieval timestamp, and interval conversion in the study config. Partial weeks must be excluded upstream. Store source files and hashes.
 
-Fixed retrospective exports do not recover the values a historical deployment would have observed. The pipeline expressly supports a fixed-snapshot research comparison, not a vintage-aware operational replay. Do not invent historical availability for a retrospective scrape. If only assumed availability can be supplied, document the assumption and perform delay sensitivity analyses; otherwise start prospective collection.
+Fixed retrospective exports do not recover the values a historical deployment would have observed. The pipeline expressly supports a fixed-snapshot research comparison, not a vintage-aware operational replay. Do not present invented availability as observed history. The supplied export has a [source-interval conversion](../data/prepared/target/trends_source_weeks.csv) and a [Saturday-ending canonical target](../data/prepared/target/trends_ASSUMED_saturday.csv). The latter assumes availability on the Monday after each source Sunday–Saturday week and excludes a likely partial last week based on file modification time. Those assumptions are labeled in every row and [the manifest](../data/prepared/target/trends_assumptions.json). Configure Saturday periods; never relabel their values as Monday–Sunday aggregates. Obtain actual release information or prospective snapshots for operational claims. See [the source-week audit](data-inventory.md).
 
 ## Raw reviews: `raw_reviews.csv`
 

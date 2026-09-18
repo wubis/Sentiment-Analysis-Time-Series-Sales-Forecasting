@@ -12,12 +12,12 @@ VARIANTS = {
 }
 
 
-def issue_time(origin):
-    return origin + pd.Timedelta(days=1)
+def issue_time(origin, issue_offset_days=1):
+    return origin + pd.Timedelta(days=issue_offset_days)
 
 
-def feature_row(trends, reviews, coverage, origin, horizon):
-    issue = issue_time(origin)
+def feature_row(trends, reviews, coverage, origin, horizon, issue_offset_days=1):
+    issue = issue_time(origin, issue_offset_days)
     row = {}
     for lag in (0, 1, 2, 3, 12, 51, 52):
         date = origin - pd.Timedelta(weeks=lag)
@@ -37,9 +37,7 @@ def feature_row(trends, reviews, coverage, origin, horizon):
     for weeks in (4, 13):
         start = issue - pd.Timedelta(weeks=weeks)
         recent = eligible[eligible.available_at > start]
-        dates = pd.date_range(
-            origin - pd.Timedelta(weeks=weeks - 1), origin, freq="W-SUN"
-        )
+        dates = pd.date_range(origin - pd.Timedelta(weeks=weeks - 1), origin, freq="7D")
         known = coverage.reindex(dates)
         complete = known.complete.eq(1) & known.available_at.le(issue)
         row[f"volume_coverage_{weeks}"] = float(complete.mean())
@@ -59,10 +57,10 @@ def feature_row(trends, reviews, coverage, origin, horizon):
     return row
 
 
-def feature_matrix(trends, reviews, coverage, horizon):
+def feature_matrix(trends, reviews, coverage, horizon, issue_offset_days=1):
     return pd.DataFrame(
         [
-            feature_row(trends, reviews, coverage, date, horizon)
+            feature_row(trends, reviews, coverage, date, horizon, issue_offset_days)
             for date in trends.index
         ],
         index=trends.index,
@@ -73,7 +71,9 @@ def columns_for(matrix, variant):
     return [col for col in matrix if col.split("_", 1)[0] in VARIANTS[variant]]
 
 
-def eligible_training_origins(trends, features, origin, horizon, min_history_weeks=52):
+def eligible_training_origins(
+    trends, features, origin, horizon, min_history_weeks=52, issue_offset_days=1
+):
     """Direct h-step label must have arrived by issue time, independently for each h."""
     label_dates = features.index + pd.Timedelta(weeks=horizon)
     labels = trends.reindex(label_dates)
@@ -82,6 +82,6 @@ def eligible_training_origins(trends, features, origin, horizon, min_history_wee
         & (features.index < origin)
         & (label_dates <= origin)
         & labels.value.notna().to_numpy()
-        & labels.available_at.le(issue_time(origin)).to_numpy()
+        & labels.available_at.le(issue_time(origin, issue_offset_days)).to_numpy()
     )
     return features.index[eligible], labels.value.to_numpy()[eligible]

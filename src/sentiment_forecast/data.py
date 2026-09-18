@@ -1,4 +1,4 @@
-"""Strict canonical inputs: dates are UTC; date denotes a Sunday-ending week."""
+"""Strict canonical inputs: UTC dates label configured Saturday- or Sunday-ending weeks."""
 
 from pathlib import Path
 import numpy as np
@@ -30,18 +30,22 @@ def read_csv(path):
     )
 
 
-def trends_table(frame):
+def trends_table(frame, week_end_day="SUN"):
     require(frame, ["date", "available_at", "value"], "trends")
     frame = frame.copy()
     frame["date"] = timestamp(frame.date)
     frame["available_at"] = timestamp(frame.available_at)
     if frame.date.isna().any() or frame.date.duplicated().any():
         raise ValueError("Trends dates must be nonmissing and unique")
-    if (frame.date.dt.dayofweek != 6).any() or (
+    if week_end_day not in {"SUN", "SAT"}:
+        raise ValueError("week_end_day must be SUN or SAT")
+    expected_day = 6 if week_end_day == "SUN" else 5
+    if (frame.date.dt.dayofweek != expected_day).any() or (
         frame.date != frame.date.dt.normalize()
     ).any():
+        weekday_name = "Sunday" if week_end_day == "SUN" else "Saturday"
         raise ValueError(
-            "Trends dates must be Sunday 00:00 UTC week labels; convert source period semantics explicitly"
+            f"Trends dates must be {weekday_name} 00:00 UTC week-end labels; convert source period semantics explicitly"
         )
     frame["value"] = pd.to_numeric(frame.value, errors="raise")
     observed = frame.value.notna()
@@ -62,7 +66,9 @@ def trends_table(frame):
     frame = frame.sort_values("date").set_index("date")
     # Missing weeks remain missing, never interpolated or carried forward.
     return frame.reindex(
-        pd.date_range(frame.index.min(), frame.index.max(), freq="W-SUN", tz="UTC")
+        pd.date_range(
+            frame.index.min(), frame.index.max(), freq=f"W-{week_end_day}", tz="UTC"
+        )
     ).rename_axis("date")
 
 
@@ -124,7 +130,7 @@ def reviews_table(frame, product_id):
     )
 
 
-def coverage_table(frame):
+def coverage_table(frame, week_end_day="SUN"):
     require(frame, ["date", "available_at", "complete"], "coverage")
     frame = frame.copy()
     frame["date"] = timestamp(frame.date)
@@ -137,10 +143,14 @@ def coverage_table(frame):
         raise ValueError(
             "Coverage needs unique dates and nonmissing availability timestamps"
         )
-    if (frame.date.dt.dayofweek != 6).any() or (
+    if week_end_day not in {"SUN", "SAT"}:
+        raise ValueError("week_end_day must be SUN or SAT")
+    expected_day = 6 if week_end_day == "SUN" else 5
+    if (frame.date.dt.dayofweek != expected_day).any() or (
         frame.date != frame.date.dt.normalize()
     ).any():
-        raise ValueError("Coverage dates must use Sunday weekly labels")
+        weekday_name = "Sunday" if week_end_day == "SUN" else "Saturday"
+        raise ValueError(f"Coverage dates must use {weekday_name} weekly labels")
     if not frame.complete.isin([0, 1]).all():
         raise ValueError("Coverage complete must be 0 or 1")
     if (frame.available_at < frame.date + pd.Timedelta(days=1)).any():

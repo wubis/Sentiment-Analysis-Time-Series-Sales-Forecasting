@@ -1,0 +1,22 @@
+{
+  "product_id": "levis-505",
+  "horizons": [1, 4, 13],
+  "alphas": [1.0, 10.0, 100.0],
+  "development_start": "2023-04-29",
+  "development_end": "2023-12-30",
+  "test_start": "2024-04-06",
+  "test_end": "2025-01-18",
+  "min_train_examples": 26,
+  "min_history_weeks": 52,
+  "study_mode": "retrospective_fixed_snapshot",
+  "week_end_day": "SAT",
+  "issue_offset_days": 2,
+  "target_metadata": {
+    "query": "505 Levi",
+    "geography": "United States",
+    "category": "All categories",
+    "search_type": "REPLACE with source request setting",
+    "retrieved_at": "REPLACE with verified retrieval timestamp",
+    "period_convention": "Saturday-ending UTC"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "rows": 81377,
+  "distinct_age_values": 60,
+  "fractional_ages": 1725,
+  "ages_over_20_years": 3,
+  "age_min_months": 0.07,
+  "age_max_months": 660.0,
+  "old_file_modified_utc": "2025-03-23T22:19:07.988675594+00:00",
+  "recent_file_modified_utc": "2025-03-23T22:19:09.193717003+00:00",
+  "absolute_review_timestamps_found": false,
+  "absolute_date_columns": [],
+  "scrape_or_reference_date_found": false,
+  "collection_date_columns": [],
+  "note": "Filesystem modification times are not evidence of original scrape or review publication times."
+}

@@ -14,7 +14,7 @@ The original notebook results were compromised by overlapping multi-step trainin
 - Temporal, deduplicated rating-proxy training using TF–IDF or optional BERT. Only post-selection reviews are exported for forecasting.
 - Per-horizon MAE/RMSE, paired text-versus-rating comparisons, block-bootstrap safeguards, forecast/fit ledgers, saved fitted models, input/source hashes, and run manifests.
 
-This is a **retrospective fixed-snapshot** pipeline. Historical Google Trends vintages and genuine source availability are needed before claiming a real-time deployment simulation. The original datasets and their preparation code are absent, so corrected real-data results cannot yet be reported.
+This is a **retrospective fixed-snapshot** pipeline. Historical Google Trends vintages and genuine source availability are needed before claiming a real-time deployment simulation. Some historical files have now been supplied and sorted in [the data inventory](docs/data-inventory.md). The Trends export has an [interval-preserving source table](data/prepared/target/trends_source_weeks.csv) and a [Saturday-ending canonical target with assumed timing](data/prepared/target/trends_ASSUMED_saturday.csv). The pipeline now supports that calendar when configured with `week_end_day: SAT` and `issue_offset_days: 2`. The [review date audit](docs/review-date-audit.md) and [product ID audit](docs/product-mapping-audit.md) found that exact review dates and verified product joins are still missing, so corrected real-data results cannot yet be reported.
 
 ## Install and test
 
@@ -33,12 +33,12 @@ python -m pytest -q
 ## Run a complete synthetic software check
 
 ```bash
-sentiment-forecast synthetic --output data/synthetic
+sentiment-forecast synthetic --output data/non_useful/synthetic
 sentiment-forecast run \
-  --config data/synthetic/study.json \
-  --trends data/synthetic/trends.csv \
-  --reviews data/synthetic/reviews.csv \
-  --coverage data/synthetic/coverage.csv \
+  --config data/non_useful/synthetic/study.json \
+  --trends data/non_useful/synthetic/trends.csv \
+  --reviews data/non_useful/synthetic/reviews.csv \
+  --coverage data/non_useful/synthetic/coverage.csv \
   --output artifacts/synthetic-001
 ```
 
@@ -46,7 +46,7 @@ Alternatively prefix `PYTHONPATH=src` and use `python -m sentiment_forecast.cli`
 
 ## Prepare real inputs
 
-Follow [the data contract](docs/data-contract.md). Restore raw review records, exact dates and product mappings, collection coverage, and the original Trends export metadata. Do not feed the untraceable `avg_*sentiments` columns or relative “months ago” values into the new pipeline.
+Start with [the data inventory](docs/data-inventory.md), [date audit](docs/review-date-audit.md), [product ID audit](docs/product-mapping-audit.md), and [data contract](docs/data-contract.md). Run `python scripts/prepare_added_data.py` to regenerate the audits and both Trends tables. The supplied Trends target is calendar-compatible after conversion; the study still needs exact review dates and product mappings, collection coverage, and the original Trends request/retrieval metadata. Use [the Saturday study example](configs/study.505-saturday.example.json) only after filling its provenance placeholders and supplying dated reviews. Do not feed the untraceable `avg_*sentiments` columns or relative “months ago” values into the new pipeline.
 
 First fit a frozen scorer on a pre-period and evaluate it on later reviews. These dates are examples, not inferred dataset boundaries:
 
