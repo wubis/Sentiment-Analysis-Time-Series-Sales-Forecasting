@@ -1,0 +1,20 @@
+{
+  "product_id": "levis-505",
+  "horizons": [1, 4, 13],
+  "alphas": [1.0, 10.0, 100.0],
+  "development_start": "2022-01-02",
+  "development_end": "2022-09-25",
+  "test_start": "2023-01-01",
+  "test_end": "2023-09-24",
+  "min_train_examples": 26,
+  "min_history_weeks": 52,
+  "study_mode": "retrospective_fixed_snapshot",
+  "target_metadata": {
+    "query": "REPLACE with exact query/topic identifier",
+    "geography": "REPLACE with export geography",
+    "category": "REPLACE with export category",
+    "search_type": "REPLACE with export search type",
+    "retrieved_at": "REPLACE with actual retrieval timestamp",
+    "period_convention": "Sunday-ending UTC"
+  }
+}

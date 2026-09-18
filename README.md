@@ -1,68 +1,88 @@
-# Sentiment-Augmented-Trend-Forecasting
-This project explores how consumer sentiment can be integrated into predictive models for Levi’s sales and product demand trends. By combining e-commerce reviews and Google Trends, this aims to forecast sales fluctuations and promotions more accurately.
+# Review-augmented search-interest forecasting
 
-This approach demonstrates that incorporating sentiment analysis consistently improves forecasting performance across time series modeling techniques, in this case augmenting an LSTM regression model with sentiment scores from BERT.
+This project tests whether review text adds predictive information for Levi’s 505 **Google Trends search interest**, beyond target history, seasonality, review volume, and star ratings. It does not currently measure sales or establish that sentiment improves forecasts.
 
-## Data Sources
-E-commerce websites website – product specifications, verified consumer reviews (Levi's, Macy's, etc)
-Google Trends – search interest for Levi’s product keywords
+The original notebook results were compromised by overlapping multi-step training/test labels, full-history scaling, test-driven early stopping, and an architecture-confounded comparison. See the [research audit and redesign](docs/research-redesign.md). The original notebooks and outputs are retained under [notebooks/archive](notebooks/archive/README.md) for audit only. Root notebooks now call the corrected package.
 
-## Data Collection & Processing
-Scraping Tools: BeautifulSoup, Selenium, Firefox WebDriver
-Volume: ~60,000 reviews collected in ~13 hours
-Cross-platform matching: Splink fuzzy matching (Levenshtein + Jaro-Winkler)
+## What is implemented
 
-Text Processing:
-- Google Translate API for non-English reviews
-- Emoji-to-sentiment normalization
-- Sentiment scoring via BERT fine-tuning
+- Explicit publication/availability timestamps, unique weekly target grids, exact product IDs, and duplicate-review handling.
+- No target filling or future backfilling. Historical features use only records available at each issue time.
+- Direct forecasts at 1, 4, and 13 weeks; training labels must have arrived at the current forecast origin.
+- Training-only imputation/scaling, chronological development selection, frozen hyperparameters, and weekly test refits.
+- Last-observation, seasonal-naive, and drift baselines; matched ridge A–E feature ablations.
+- Temporal, deduplicated rating-proxy training using TF–IDF or optional BERT. Only post-selection reviews are exported for forecasting.
+- Per-horizon MAE/RMSE, paired text-versus-rating comparisons, block-bootstrap safeguards, forecast/fit ledgers, saved fitted models, input/source hashes, and run manifests.
 
-Feature Engineering:
-- Sentiment metrics (rolling averages & volatility)
-- Product attributes (fit, style, material, etc.)
-- Review-based statistics (ratings, counts, engagement)
-- External signals (Google Trends, climate data, holidays, promotions)
+This is a **retrospective fixed-snapshot** pipeline. Historical Google Trends vintages and genuine source availability are needed before claiming a real-time deployment simulation. The original datasets and their preparation code are absent, so corrected real-data results cannot yet be reported.
 
-## Sentiment Analysis
-Model: BERT (fine-tuned on Levi’s reviews)
-- Transformer-based model (attention mechanism)
-- Bidirectional encoder/decoder setup allows for nuanced natural language processing while being pretrained on a massive collection of text
-  
-Review Preprocessing:
-- Translate non-english reviews, normalize emojis and symbols (e.g. heart = good, thumb down = bad)
-- Tokenize data to feed into BERT
-  
-Training Methods:
-- Compute loss with MSELoss to see how model is doing vs labeled dataset
-- Adjust neural layer node weights with AdamW optimizer (stochastic gradient descent where weight decay is decoupled from gradient update)
-- Decay learning rate for fine tuning with LinearLR
-- Training: 41548, Validation: 10387, Test: 12984
+## Install and test
 
-![Deep Learning Training Architecture](dl_training.png)
+Python 3.11 is the tested runtime. Create an isolated environment:
 
-Performance: MAE = 0.1328, MSE: 0.0787, RMSE = 0.2805, R² = 0.8286
+```bash
+python3.11 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.lock
+python -m pip install --no-deps -e .
+python -m pytest -q
+```
 
-![True vs Predicted Labels (Histogram)](bert_eval2.png)
-![True vs Predicted Labels (Box Plot)](bert_eval.png)
+`requirements.lock` pins the tested core/test environment. Optional BERT is separately installed with `python -m pip install -e '.[bert]'`; it downloads `bert-base-uncased` and requires substantially more compute. The BERT training branch is not covered by the lightweight integration run. Record its environment separately for a research run.
 
-## Time-Series Predictive Model
-Model: LSTM (Long-Short Term Memory)
-- Recurrent neural network structure with architecture that allows for long term and non-linear dependencies
-- Naturally sequential and efficient, making it great for iterative tasks like modeling with time-series data
+## Run a complete synthetic software check
 
-![LSTM Gate Architecture](LSTM.png)
+```bash
+sentiment-forecast synthetic --output data/synthetic
+sentiment-forecast run \
+  --config data/synthetic/study.json \
+  --trends data/synthetic/trends.csv \
+  --reviews data/synthetic/reviews.csv \
+  --coverage data/synthetic/coverage.csv \
+  --output artifacts/synthetic-001
+```
 
-Trend Data:
-- Train LSTM on 5 year Google Trends data
-- Augment deep learning training with sentiment data and observe difference
-  
-Training Methods:
-- Aggregated sentiment scores and merged with search trend data
-- Use lookback data as input to predict future
-- MSELoss (cost function), Adam (stochastic gradient-based optimization), layer dropout (to deal with overfitting)
-  
-![LSTM Test Split Prediction](lstm_prediction.png)
+Alternatively prefix `PYTHONPATH=src` and use `python -m sentiment_forecast.cli` in place of `sentiment-forecast`. Existing fixture/run directories are never overwritten; choose a new run name when repeating. Synthetic results validate software behavior, **not the research hypothesis**.
 
-## Key Results
-Sentiment consistently improved prediction accuracy across models. Sentiment signals could act as a substitute for missing seasonality/memory in deep learning time-series models while preserving the foresight and stability of the original models.
+## Prepare real inputs
 
+Follow [the data contract](docs/data-contract.md). Restore raw review records, exact dates and product mappings, collection coverage, and the original Trends export metadata. Do not feed the untraceable `avg_*sentiments` columns or relative “months ago” values into the new pipeline.
+
+First fit a frozen scorer on a pre-period and evaluate it on later reviews. These dates are examples, not inferred dataset boundaries:
+
+```bash
+sentiment-forecast score-reviews \
+  --reviews data/raw_reviews.csv \
+  --train-end 2018-12-31T23:59:59Z \
+  --validation-end 2019-06-30T23:59:59Z \
+  --test-end 2019-12-31T23:59:59Z \
+  --backend tfidf \
+  --output artifacts/scorer-001
+```
+
+Use `artifacts/scorer-001/scored_reviews.csv` as the forecasting review input. Test labels never choose the scorer or its checkpoint. The target is explicitly `(rating - 3) / 2`; independent sentiment validity still requires human annotations.
+
+Copy `configs/study.example.json` to `configs/study.json`, choose dates supported by the recovered data, and register that configuration before evaluating:
+
+```bash
+sentiment-forecast run \
+  --config configs/study.json \
+  --trends data/trends.csv \
+  --reviews artifacts/scorer-001/scored_reviews.csv \
+  --coverage data/coverage.csv \
+  --output artifacts/research-001
+```
+
+Review `manifest.json`, `metrics.csv`, `forecasts.csv`, `fits.csv`, `tuning.csv`, `selected.json`, and `paired_comparisons.json` together. `models.joblib` stores fitted pipelines and training-origin manifests for final-period forecasts; only load artifacts you trust. Development errors have been used for model selection and are not unbiased final results. Only the predeclared evaluation period supports a final comparison; creating a new output directory does not make repeated peeking valid.
+
+The primary comparison is `ridge_E` versus `ridge_C` at four weeks. Both use the same model family and hyperparameter budget:
+
+| Variant | Inputs |
+|---|---|
+| A | Target lags and calendar seasonality |
+| B | A + review volume and collection coverage |
+| C | B + observed ratings |
+| D | B + text-derived scores |
+| E | C + text-derived scores |
+
+See [implementation status](docs/implementation-status.md) for validation scope and remaining research work.
